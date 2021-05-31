@@ -1,0 +1,269 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import sklearn
+import warnings
+warnings.filterwarnings('ignore')
+
+
+
+dataset = pd.read_csv('data/iris.csv')
+
+
+
+# veri içindeki adet (n -> satır sayısı) ve feature (p -> değişken sayısı)
+# shape -> (n, p)
+# n = 150
+# p = 4
+
+dataset.shape
+
+
+
+# ilk 5 satırı görelim
+
+dataset.head(5)
+
+
+
+# basit istatistikler
+
+dataset.describe()
+
+
+
+# Her sınıftan (class) kaç adet var
+
+dataset.groupby('Species').size()
+
+
+
+# Değişken sütunları
+
+feature_columns = ['SepalLengthCm', 'SepalWidthCm', 'PetalLengthCm','PetalWidthCm']
+
+
+
+# Feature Matrisi
+
+X = dataset[feature_columns].values
+X
+
+
+# Labels vektörü
+
+y = dataset['Species'].values
+y
+
+
+# Scikit-Learn den bir LabelEncoder alalım
+
+from sklearn.preprocessing import LabelEncoder
+
+
+
+# LabelEncoder nesnemizi yaratalım
+
+le = LabelEncoder()
+
+
+
+# encode etmeden önce y'yi görelim
+
+print('Iris-setosa:\n', y[0:10])
+print('\n')
+print('Iris-versicolour:\n', y[50:60])
+print('\n')
+print('Iris-virginica:\n', y[100:110])
+
+
+# şimdi y'yi encode edelim
+
+y = le.fit_transform(y)
+
+
+# encode ettikten sonra y'yi görelim
+
+print('Iris-setosa:\n', y[0:10])
+print('\n')
+print('Iris-versicolour:\n', y[50:60])
+print('\n')
+print('Iris-virginica:\n', y[100:110])
+
+
+
+# train_test_split metodunu import edelim
+
+from sklearn.model_selection import train_test_split
+
+
+
+# şimdi veriyi ayıralım
+# Train - Test  --->  %60 - %40
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, 
+                                                    test_size = 0.4, 
+                                                    random_state = 4)
+                                                    
+                                                    
+# Train data şekli
+
+print('X_train:', X_train.shape)
+print('y_train:', y_train.shape)
+
+
+
+plt.figure()
+sns.pairplot(dataset.drop("Id", axis=1), 
+             hue="Species", 
+             size=3, 
+             markers=["o", "s", "D"])
+plt.show()
+
+
+
+plt.figure()
+dataset.drop("Id", axis=1).boxplot(by="Species", figsize=(15, 10))
+plt.show()
+
+
+
+# gerekli kütüphaneyi import edelim
+
+from sklearn.neighbors import KNeighborsClassifier
+
+
+def sklearn_knn(train_data, label_data, test_data, k):
+    """Scikit-Learn ile KNN uygulama fonksiyonu"""
+    
+    # knn classifier yarat
+    knn = KNeighborsClassifier(n_neighbors=k)
+    
+    # Train -> X_train
+    knn.fit(train_data, label_data)
+    
+    # Predict -> X_test
+    predict_label = knn.predict(test_data)
+    
+    # Return
+    return predict_label
+    
+    
+# sklearn_knn fonksiyonunu çağır ve tahmin değerlerini al
+
+# K = 3
+
+y_predict = sklearn_knn(X_train, y_train, X_test, 3)
+y_predict
+
+
+
+y_predict.shape
+
+
+def accuracy(test_labels, pred_labels):  
+    """Doğruluk hesaplama fonksiyonu"""
+    
+    # Doğru tahminlerin sayısını hesapla
+    correct = np.sum(test_labels == pred_labels) 
+    
+    # Toplam test data adedi
+    n = len(test_labels) 
+    
+    # accuracy -> doğruluk oranı = doğru tahmin / toplam test verisi
+    accur = correct / n
+    
+    return accur
+    
+
+# şimdi accuracy fonksiyonunu kullanıp model doğruluğumuzu ölçelim
+
+accuracy(y_test, y_predict)
+
+
+
+
+from sklearn.metrics import accuracy_score
+
+
+accuracy_sklearn = accuracy_score(y_test, y_predict)*100
+
+
+
+print('Model Doğruluğumuz (Accuracy) ' + str(round(accuracy_sklearn, 2)) + ' %.')
+
+
+
+
+n = len(dataset)
+n
+
+
+
+import math
+k_max = math.sqrt(n)
+k_max
+
+
+
+
+# Accuracy oranları için bir liste yarat
+normal_accuracy = []  
+
+# olabilecek K değerleri
+k_value = range(1, 13)
+
+# döngü ile tek tek K değerlerine bak
+for k in k_value:
+    y_predict = sklearn_knn(X_train, y_train, X_test, k)
+    accur = accuracy_score(y_test, y_predict)
+    normal_accuracy.append(accur)
+    
+    
+    
+ 
+# Şimdi bu K değerlerine göre elde ettiğimiz Accuracy'leri çizelim
+
+plt.xlabel("k")
+plt.ylabel("accuracy")
+
+# grafiği çiz
+plt.plot(k_value, normal_accuracy, c='g')
+
+# Izgara ekle
+plt.grid(True)  
+
+plt.show()
+
+
+
+# Accuracy oranları için bir liste yarat
+normal_accuracy = []  
+
+# olabilecek K değerleri
+k_value = range(1, 31)
+
+# döngü ile tek tek K değerlerine bak
+for k in k_value:
+    y_predict = sklearn_knn(X_train, y_train, X_test, k)
+    accur = accuracy_score(y_test, y_predict)
+    normal_accuracy.append(accur)
+    
+    
+    
+# Şimdi bu K değerlerine göre elde ettiğimiz Accuracy'leri çizelim
+
+plt.xlabel("k")
+plt.ylabel("accuracy")
+
+# grafiği çiz
+plt.plot(k_value, normal_accuracy, c='g')
+
+# Izgara ekle
+plt.grid(True)  
+
+plt.show()
+
+
+
